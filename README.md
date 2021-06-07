@@ -1,6 +1,7 @@
-Co-morbidity between mood and substance-related disorders: a systematic review and meta-analysis
-Abstract 
-Aims
+TITLE: Co-morbidity between mood and substance-related disorders: a systematic review and meta-analysis.
+
+ABSTRACT 
+Aims. 
  Evidence indicates that mood disorders often co-occur with substance-related disorders. However, pooling comorbidity estimates can be challenging due to heterogeneity in diagnostic criteria and in the overall study design. The aim of this study was to systematically review and, where appropriate, meta-analyse estimates related to the pairwise comorbidity between mood disorders and substance-related disorders, after sorting these estimates by various study designs. 
 Methods
  We searched PUBMED (MEDLINE), Embase, CINAHL, Web of Science for publications between 1980 and 2017 regardless of geographical location and language. We meta-analysed estimates from original articles in four broadly defined mood, and 35 substance-related disorders (where data were available) after sorted by: (a) temporal ordering (lifetime, period, or temporally-ordered estimates), and (c) estimates with or without covariate adjustments. 
