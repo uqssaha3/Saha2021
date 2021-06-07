@@ -1,0 +1,786 @@
+---
+title: '**Comorbidity between mood and substance disorder - UNADJUSTED ESTIMATES**'
+fontsize: 22pt
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+theme: united
+font-family: Arial
+---
+<hr>
+<br>
+
+<style>
+  
+#TOC {
+ position: fixed;
+  left: 0;
+  top: 0;
+  width: 280px;
+  height: 100%;
+  overflow:auto;
+}
+body {
+  max-width: 1200px;
+  margin: auto;
+  margin-left:150px;
+  line-height: 20px;
+}
+h1.title {
+    font-size: 28px;
+}
+h4 {
+    font-size: 15px;
+}
+h3 {
+    font-size: 16px;
+}
+h2 {
+    font-size: 20px;
+}
+h1 {
+    font-size: 24px;
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 28%;
+}
+.table {
+    width: 40%;
+}
+</style>
+
+\vspace{20mm}
+
+<br>
+<br>
+**Author:** Carmen Lim \newline{}
+<br>
+<br>
+**Report date:** 29 April 2021
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+\newpage
+ 
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries, include = FALSE}
+library(Matrix)
+library(metafor)
+library(ggplot2)
+library(plotly)
+library(here)
+library(dplyr)
+library(tinytex)
+```
+
+```{r readdata, echo = FALSE}
+ma <- read.csv(here("data", "ma1.csv"))
+ma1 <- ma[1:755,c("author_year","country","site", "temporality_type","pair","unadj_type","unadj_subtype","unadj_rate","unadj_lower",	"unadj_upper","unadj_pvalue", "a","b","c","d", "unadj_indicator","unadjusted_type", "adj_indicator", "M_EstimateType" )]
+ma2 <- ma[1:755,c("author_year","country","site", "temporality_type","pair","adj_type","adj_subtype","adj_rate","adj_lower",	"adj_upper","adj_pvalue", "adj_indicator", "a","b","c","d","M_EstimateType"  )]
+#ma$unadj_rate <- as.numeric(ma$unadj_rate)  
+
+```
+
+```{r function, echo = FALSE}
+unadj_fn <- function(y2,z ){
+dat2 <- escalc(measure="OR", ai=a, bi=b, ci=c, di=d, data=ma11)
+dat2$yi <- replmiss(dat2$yi, log(dat2$unadj_rate))
+dat2$zi <-sign(dat2$yi)*qnorm(dat2$unadj_pvalue/2, lower.tail = FALSE)
+dat2$sei <- dat2$yi/dat2$zi
+dat2$sei <- replmiss(dat2$sei, with(dat2, (log(unadj_upper) - log(unadj_lower))/(2*1.96)))
+dat2$vi <- replmiss(dat2$vi, dat2$sei^2)
+dat2$zi <- dat2$sei <-NULL
+res2 <- rma(yi, vi, slab=paste(author_year,",",country),   data=dat2)
+res2
+print(predict(res2,transf=exp))
+taf <- trimfill(res2)
+forest(res2,atransf=exp, xlab="Unadjusted Odds Ratio" , cex = 0.7, xlim=c(-10, 7),   mlab="", at=log(c(0.01, 1, 5, 10, z)), psize=1.4,order=order(res2$yi))
+par(font=2)
+text(-10,   nrow(ma11)+1.5, cex = 0.7, "Study",  pos=4)
+text(7,    nrow(ma11)+1.5, cex = 0.7, "Unadjusted Odds Ratio [95% CI]", pos=2)
+text(-10, y2, pos=4,  cex = 0.7, bquote(paste("Heterogeneity (Q = ", .(formatC(res2$QE, digits=2, format="f")), ", df = ", .(res2$k - res2$p),", p = ", .(formatC(res2$QEp, digits=2, format="f")), "; ", I^2, " = ",
+.(formatC(res2$I2, digits=1, format="f")), "%)")))
+funnel(taf, legend=FALSE,cex=0.7, cex.lab= 0.8, cex.axis= 0.8 )
+#funnel(taf, cex=0.7, cex.lab= 0.8, cex.axis= 0.8 )
+#legend("topright", "Legend", cex = 0.7)
+regtest(res2, model="rma") 
+}
+
+
+adj_fn <- function(y2,z ){
+dat2 <- escalc(measure="OR", ai=a, bi=b, ci=c, di=d, data=ma22)
+dat2$yi <- replmiss(dat2$yi, log(dat2$adj_rate))
+dat2$zi <-sign(dat2$yi)*qnorm(dat2$adj_pvalue/2, lower.tail = FALSE)
+dat2$sei <- dat2$yi/dat2$zi
+dat2$sei <- replmiss(dat2$sei, with(dat2, (log(adj_upper) - log(adj_lower))/(2*1.96)))
+dat2$vi <- replmiss(dat2$vi, dat2$sei^2)
+dat2$zi <- dat2$sei <-NULL
+res2 <- rma(yi, vi, slab=paste(author_year,",",country),   data=dat2)
+print(predict(res2,transf=exp))
+taf <- trimfill(res2)
+forest(res2,atransf=exp, xlab="Adjusted Odds Ratio" ,cex=0.8, xlim=c(-10, 7), mlab="", at=log(c(0.01, 1,5,10, z)), psize=1.4,order=order(res2$yi))
+par(font=2)
+text(-10,  nrow(ma22)+1.5, cex = 0.7, "Study",  pos=4)
+text(7,   nrow(ma22)+1.5, cex = 0.7, "Adjusted Odds Ratio [95% CI]", pos=2)
+text(-10, y2, pos=4, cex=0.7, bquote(paste("Heterogeneity (Q = ",
+                                      .(formatC(res2$QE, digits=2, format="f")), ", df = ", .(res2$k - res2$p),
+                                      ", p = ", .(formatC(res2$QEp, digits=2, format="f")), "; ", I^2, " = ",
+                                      .(formatC(res2$I2, digits=1, format="f")), "%)")))
+funnel(taf, legend=FALSE,cex=0.7, cex.lab= 0.8, cex.axis= 0.8 )
+regtest(res2, model="rma") 
+#res2
+}
+```
+
+# Temporally ordered Depression and alcohol abuse
+
+###  Temporally estimates - UNADJUSTED
+#```{r, echo = FALSE  }
+ma11<- ma1 %>% filter(pair == "DEP-ALA" ) %>%
+  filter(temporality_type == "TO") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(M_EstimateType == "odds ratios") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+
+ma11<- ma1 %>% filter(pair == "DEP-ALD" ) %>%
+  filter(temporality_type == "TO") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(M_EstimateType == "odds ratios") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+
+ma22<- ma2 %>% filter(pair == "DEP-ALD" ) %>%
+  filter(temporality_type == "TO") %>% 
+  filter(adj_indicator == "1") %>%
+  filter(M_EstimateType == "odds ratios") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+
+ma22<- ma2 %>% filter(pair == "AUD-DEP" ) %>%
+  filter(temporality_type == "TO") %>% 
+  filter(adj_indicator == "1") %>%
+  filter(M_EstimateType == "odds ratios") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+#```
+
+#   Table 1. Broadly-defined mood disorder and substance use disorder
+<br>
+<br>
+<br>
+<br>
+
+
+## 1. Mood disorder and Alcohol abuse
+
+###  Lifetime estimates - UNADJUSTED
+#```{r, echo = FALSE  }
+#a1<- c("MOOD-ALA", "ALA-MOOD")
+#ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+#  filter(unadj_indicator == "1") %>%
+#  filter(unadjusted_type == "overall")
+#unadj_fn(-1, 10)
+#```
+
+###  Lifetime estimates - ADJUSTED
+#```{r, echo = FALSE  }
+#a1<- c("MOOD-ALA", "ALA-MOOD")
+#ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+#   filter(adj_indicator == "1") %>%
+#  filter(adj_type == "overall")
+#adj_fn(-1, 10)
+#```
+
+###  Period-prevalence estimates  - UNADJUSTED
+```{r, echo = FALSE}
+a1<- c("MOOD-ALA", "ALA-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10) 
+```
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE}
+a1<- c("MOOD-ALA", "ALA-MOOD")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+<br>
+<br>
+<br>
+
+
+
+## 2. Mood disorder and Alcohol dependence
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-ALD", "ALD-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Lifetime estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-ALD", "ALD-MOOD")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-ALD", "ALD-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+<br>
+<br>
+<br>
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-ALD", "ALD-MOOD")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 15)
+```
+
+<br>
+<br>
+<br>
+
+## 3. Mood disorder and Alcohol Use Disorder
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-AUD", "AUD-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Lifetime estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-AUD", "AUD-MOOD")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-AUD", "AUD-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 30)
+```
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-AUD", "AUD-MOOD")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+
+
+<br>
+<br>
+<br>
+
+## 4. Mood disorder and Drug Abuse
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-DRA", "DRA-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+<br>
+<br>
+<br>
+
+
+## 5. Mood disorder and Drug dependence
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-DRD", "DRD-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+    filter(unadj_indicator == "1") %>%
+    filter(unadjusted_type == "overall")
+unadj_fn(-1, 50)
+```
+
+<br>
+<br>
+<br>
+
+## 6. Mood disorder and Drug Use disorder
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-DUD", "DUD-MOOD")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+<br>
+<br>
+<br>
+
+
+## 7. Mood disorder and SUD
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("MOOD-SUD", "SUD-MOOD")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 30)
+```
+<br>
+<br>
+<br>
+
+
+
+#   Table 2. Broadly-defined dysthymia and substance use disorder
+<br>
+<br>
+<br>
+<br>
+
+## 1. Dysthymia and Alcohol abuse
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-ALA", "ALA-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+<br>
+<br>
+<br>
+
+## 2. Dysthymia and Alcohol dependence
+
+###  Lifetime estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-ALD", "ALD-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+<br>
+<br>
+<br>
+
+###  Lifetime estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-ALD", "ALD-DYS")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-ALD", "ALD-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+<br>
+<br>
+<br>
+
+## 3. Dysthymia and Alcohol use disorder
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-AUD", "AUD-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+###  Lifetime estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-AUD", "AUD-DYS")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-AUD", "AUD-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-AUD", "AUD-DYS")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 30)
+```
+
+
+## 3. Dysthymia and Drug dependence
+
+###  Lifetime estimates- UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-DRD", "DRD-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 50)
+```
+
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DYS-DRD", "DRD-DYS")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 50)
+```
+
+#   Table 3. Broadly-defined depression and substance use disorder
+<br>
+<br>
+<br>
+<br>
+
+## 1. Depression and Alcohol abuse
+
+###  Lifetime estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALA", "ALA-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Lifetime estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALA", "ALA-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALA", "ALA-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALA", "ALA-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+
+## 2. Depression and Alcohol dependence
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALD", "ALD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+``` 
+
+###  Lifetime estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALD", "ALD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALD", "ALD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-ALD", "ALD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 30)
+```
+
+## 3. Depression and Alcohol use disorder
+
+###  Lifetime estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-AUD", "AUD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+``` 
+
+###  Lifetime estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-AUD", "AUD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-AUD", "AUD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-AUD", "AUD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+
+## 4. Depression and Drug abuse
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DRA", "DRA-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+##  Period-prevalence estimates - UNADJUSTED
+
+```{r, echo = FALSE  }
+a1<- c("DEP-DRA", "DRA-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+## 5. Depression and Drug dependence
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DRD", "DRD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DRD", "DRD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 40)
+```
+
+###  Period-prevalence estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DRD", "DRD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+## 6. Depression and Drug use disorder
+
+###  Lifetime estimates - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DUD", "DUD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+``` 
+
+###  Lifetime estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DUD", "DUD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 40)
+```
+
+###  Period-prevalence estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DUD", "DUD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 20)
+```
+
+###  Period-prevalence estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("DEP-DUD", "DUD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+## 7. Depression and Cannabis dependence
+###  Lifetime estimates - UNADJUSTED
+
+```{r, echo = FALSE  }
+a1<- c("DEP-MARD", "MARD-DEP")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 30)
+```
+
+## 8. Depression and Nicotine dependence
+###  Period-prevalence estimates - ADJUSTED
+
+```{r, echo = FALSE  }
+a1<- c("DEP-NICD", "NICD-DEP")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+#   Table 4. Broadly-defined bipolar disorder and substance use disorder
+<br>
+<br>
+<br>
+<br>
+
+## 1. Bipolar disorder and Alcohol abuse
+
+###  Lifetime estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("BIPOLAR-ALA", "ALA-BIPOLAR")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+###  Period-prevalence estimates  - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("BIPOLAR-ALA", "ALA-BIPOLAR")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 20)
+```
+
+## 2. Bipolar disorder and Alcohol dependence
+
+###  Lifetime estimates - ADJUSTED
+```{r, echo = FALSE  }
+a1<- c("BIPOLAR-ALD", "ALD-BIPOLAR")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+## 3. Bipolar disorder and Alcohol use disorder
+
+###  Period-prevalence estimates - ADJUSTED
+
+```{r, echo = FALSE  }
+a1<- c("BIPOLAR-AUD", "AUD-BIPOLAR")
+ma22<- ma2 %>% filter(pair %in% a1  & temporality_type == "PP") %>% 
+   filter(adj_indicator == "1") %>%
+  filter(adj_type == "overall")
+adj_fn(-1, 10)
+```
+
+## 4. Bipolar disorder and Substance use disorder
+###  Lifetime estimates  - UNADJUSTED
+```{r, echo = FALSE  }
+a1<- c("BIPOLAR-SUD", "SUD-BIPOLAR")
+ma11<- ma1 %>% filter(pair %in% a1  & temporality_type == "LT") %>% 
+  filter(unadj_indicator == "1") %>%
+  filter(unadjusted_type == "overall")
+unadj_fn(-1, 10)
+```
